@@ -52,28 +52,24 @@ files=(
   "api/docker-compose.yml"
 )
 
-# Escapar caracteres especiales del URL (perl interpola). Usamos | como
-# separador de regex para evitar conflicto con / del path.
-escape_for_perl() {
-  printf '%s' "$1" | sed 's/[\/&|]/\\&/g'
-}
-
-API_KEY_ESC=$(escape_for_perl "$API_KEY")
-DB_PASSWORD_ESC=$(escape_for_perl "$DB_PASSWORD")
-SINGLESTORE_URL_ESC=$(escape_for_perl "$SINGLESTORE_URL")
-VPS_DOMAIN_ESC=$(escape_for_perl "$VPS_DOMAIN")
+# Pasamos las variables a perl via env vars ($ENV{...}) en lugar de interpolación
+# shell. Esto evita problemas con caracteres especiales (@, ^, etc.) en SINGLESTORE_URL.
+export _API_KEY="$API_KEY"
+export _DB_PASSWORD="$DB_PASSWORD"
+export _SINGLESTORE_URL="$SINGLESTORE_URL"
+export _VPS_DOMAIN="$VPS_DOMAIN"
 
 for f in "${files[@]}"; do
   if [ ! -f "$f" ]; then
     echo "warn: $f no existe, salteado" >&2
     continue
   fi
-  perl -i -pe "
-    s|REPLACE_API_KEY|${API_KEY_ESC}|g;
-    s|REPLACE_PASSWORD|${DB_PASSWORD_ESC}|g;
-    s|REPLACE_SINGLESTORE_URL|${SINGLESTORE_URL_ESC}|g;
-    s|your-vps\\.example\\.com|${VPS_DOMAIN_ESC}|g;
-  " "$f"
+  perl -i -pe '
+    s/REPLACE_API_KEY/$ENV{_API_KEY}/g;
+    s/REPLACE_PASSWORD/$ENV{_DB_PASSWORD}/g;
+    s/REPLACE_SINGLESTORE_URL/$ENV{_SINGLESTORE_URL}/g;
+    s/your-vps\.example\.com/$ENV{_VPS_DOMAIN}/g;
+  ' "$f"
   echo "  ✓ $f"
 done
 
