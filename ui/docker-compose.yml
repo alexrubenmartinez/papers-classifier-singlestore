@@ -1,0 +1,21 @@
+# papers-ui — SPA Angular sirviendo el dashboard del papers-api.
+# Deploy:
+#   scp -r examen/ui/ root@VPS:/root/proyecto_papers/papers-ui/
+#   ssh root@VPS "cd /root/proyecto_papers/papers-ui && docker compose up -d --build"
+#
+# El container vive en stack_web y se accede SOLO via el nginx central del stack
+# (vhost papers-ui.your-vps.example.com). No publica puerto al host.
+
+services:
+  papers-ui:
+    build: .
+    image: papers-ui:latest
+    container_name: papers-ui
+    restart: unless-stopped
+    networks:
+      - web
+
+networks:
+  web:
+    external: true
+    name: stack_web

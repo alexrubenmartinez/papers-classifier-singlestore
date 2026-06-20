@@ -1,0 +1,37 @@
+# FastAPI papers-api (storage en SingleStore para papers, Mongo para jobs+config).
+
+services:
+  papers-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: papers-api:latest
+    container_name: papers-api
+    restart: unless-stopped
+    networks:
+      - web
+    environment:
+      OLLAMA_URL: http://ollama:11434
+      OLLAMA_DEFAULT_MODEL: qwen2.5:1.5b
+      # Mongo: jobs + config (schema flexible, no necesita vectores).
+      MONGO_URI: mongodb://admin:REPLACE_PASSWORD@mongodb:27017/?authSource=admin
+      MONGO_DB: papers_api
+      # SingleStore: storage de papers con embedding VECTOR(384).
+      # Formato: mysql://user:pass@host:port/db
+      SINGLESTORE_URL: REPLACE_SINGLESTORE_URL
+      # MinIO: PDFs originales + tier folders gold/silver/bronze/out_of_range.
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: admin
+      MINIO_SECRET_KEY: REPLACE_PASSWORD
+      MINIO_BUCKET: examen-parcial
+      MINIO_PREFIX: papers-api/uploads
+      HF_HOME: /root/.cache/huggingface
+      # Evita warnings al forkear con HF tokenizers en ProcessPoolExecutor.
+      TOKENIZERS_PARALLELISM: "false"
+    volumes:
+      - ./hf_cache:/root/.cache/huggingface
+
+networks:
+  web:
+    external: true
+    name: stack_web
